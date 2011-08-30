@@ -1,7 +1,7 @@
 cpantester-scripts
-===================
-These are the scripts I use to control my cpantesters. They use ssh to
-connect to various machines & virtual machines.
+==================
+
+Scripts loosely connected to CPAN smoking.
 
 contents
 --------
