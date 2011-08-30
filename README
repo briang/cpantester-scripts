@@ -6,7 +6,7 @@ connect to various machines & virtual machines.
 == contents ==
 
 autokillsmoke - doesn't do anything... yet!
-cpan-uploads-per-year - show
+cpan-uploads-per-year - list CPAN uploads by year
 cpanrepdb - update database from various reports-sent.db's
 cpanrepq - query my testers database
 monitor.pl - watch for stalled smokers
