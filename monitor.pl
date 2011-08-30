@@ -20,9 +20,9 @@ my $SCAN_PERIOD  = 30;          # scan every n seconds
 my $DB_PERIOD    = 12 * 60;     # warn if DB hasn't grown in last n seconds
 
 my %smokers = (
-    fbsd   => { addr => '172.16.1.11', user => 'test' },
-    laptop => { addr => '172.16.1.8',  user => 'bri'  },
-    zippy  => { addr => 'localhost',   user => 'test' },
+    fbsd   => 'test@172.16.1.11',
+    laptop => 'bri@172.16.1.8',
+    zippy  => 'test@localhost',
 );
 
 say "Monitoring ", join ", ", sort keys %smokers;
@@ -66,13 +66,15 @@ sub filesize {
 
     my @cmd = (
         'ssh',
-        sprintf( q<%s@%s>, @{$smokers{$smoker}}{qw<user addr>} ),
+        $smokers{$smoker},
         qq<perl -wE 'say -s q($file)'>
     );
 
     my ($stdout, $stderr) = capture {
         system @cmd;
     };
+
+    #dd $smoker, $file, $stdout+0;
 
     return 0 + $stdout
       if $stdout ne "\n";
