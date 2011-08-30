@@ -72,19 +72,17 @@ sub filesize {
     my $file   = shift;
 
     my @cmd = (
-        'ssh',
-        $smokers{$smoker},
-        qq<perl -wE 'say -s q($file)'>
+        'ssh', $smokers{$smoker}, qq<perl -wE '-e q($file) and say -s _'>
     );
 
-    my ($stdout, $stderr) = capture {
-        system @cmd;
-    };
+    my ($stdout, $stderr) = capture { system @cmd };
+
+    die "unknown error: $stderr"
+      if $stderr; # XXX TODO cater for boxen being down
 
     #dd $smoker, $file, $stdout+0;
 
-    return 0 + $stdout
-      if $stdout ne "\n";
+    $stdout ||= 0; # tester is up, but not smoking
 
-    die "unknown error: $stderr";
+    return 0 + $stdout;
 }
