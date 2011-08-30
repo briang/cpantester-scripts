@@ -1,0 +1,28 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings FATAL => 'all';
+#use diagnostics;
+
+use Data::Dump;
+#use Carp qw();
+
+$|=1;
+################################################################################
+
+open my $IN, "zcat /mirrors/cpan/indices/find-ls.gz |";
+
+my %by_year;
+my $count;
+while (my $line = <$IN>) {
+    my @F = split " ", $line;
+    $F[-2] =~ s/....\..+//;
+    $by_year{$F[-2]}++;
+    $count++;
+}
+
+for (reverse sort keys %by_year) {
+    printf "%4d => %4d (%4.1f)\n", $_, $by_year{$_}, 100 * $by_year{$_} / $count;
+}
