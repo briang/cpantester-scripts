@@ -1,0 +1,72 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings FATAL => 'all';
+#use diagnostics;
+
+use Data::Dump;
+#use Carp qw();
+
+$|=1;
+################################################################################
+use autodie;
+use version;
+use CPAN::DistnameInfo;
+
+my $FIND_LS      = '/mirrors/cpan/indices/find-ls.gz';
+my $REPORTS_SENT = '/home/test/.cpanreporter/reports-sent.db';
+
+my $db = read_reports_sent($REPORTS_SENT);
+
+open my $IN, "-|", "gunzip --stdout $FIND_LS";
+my @out;
+while (<$IN>) {
+    chomp;
+    my ($ts, $path) = (split)[-2, -1];
+    $path =~ s|.*/||;
+    $path =~ s/\.(?:tar.gz|tar.bz2|zip)$// or die $path;
+
+    push @out, sprintf "%.6f %1s %s\n", $ts, exists $db->{$path} ? 'T' : '', $path;
+    #last if @out == 21;
+}
+
+my @lines;
+my $row_num = 0;
+for (@out) {
+    $row_num++;
+    push @lines, $_;
+    shift @lines if @lines > 21;
+
+    next unless @lines == 21;
+    next unless $lines[10] =~ m/   /;
+
+    my $t_before = my $t_after = 0;
+    for my $i (0 .. 20) {
+        if ($lines[$i] =~ m/ T /) {
+            if    ($i < 10) { $t_before++ }
+            elsif ($i > 10) { $t_after++  }
+        }
+    }
+
+    my ($dist) = $lines[10] =~ / [T ] (.*)/;
+
+   #printf "line: %d (%s): %d %d\n", $row_num, $dist, $t_before, $t_after;
+    last if $t_before == 0 && $t_after == 0;
+}
+
+print for @out;
+
+sub read_reports_sent {
+    my $file = shift;
+
+    open my $IN, "<", $file;
+
+    my %db;
+    while (<$IN>) {
+        my $distvname = (split)[2];
+        $db{$distvname} = 1;
+    }
+    return \%db;
+}
