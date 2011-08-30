@@ -38,19 +38,25 @@ while (1) {
         alert("$smoker\'s log is too big")
           if $log_length > $MAX_LOG_SIZE;
 
-        if ($log_length == $log_prev || $db_length == $db_prev) {
-            alert("$smoker seems stalled (DB)")
-              if time - $data{$smoker}{db_time}  >= $DB_PERIOD;
-            alert("$smoker seems stalled (log)")
-              if time - $data{$smoker}{log_time} >= $LOG_PERIOD;
-        }
-        else {
-            @{$data{$smoker}}{qw<db db_time>} = ( $db_length, time )
-              if $db_length != $db_prev;
+        my $alert;
+        $alert = "DB"
+          if   $db_length == $db_prev
+            && time - $data{$smoker}{db_time}  >= $DB_PERIOD;
 
-            @{$data{$smoker}}{qw<log log_time>} = ( $log_length, time )
-              if $log_length != $log_prev;
+        $alert = "log"
+          if   $log_length == $log_prev
+            && time - $data{$smoker}{log_time} >= $LOG_PERIOD;
+
+        if ($alert) {
+            alert("$smoker seems stalled ($alert)");
+            next;
         }
+
+        @{$data{$smoker}}{qw<db db_time>} = ( $db_length, time )
+          if $db_length != $db_prev;
+
+        @{$data{$smoker}}{qw<log log_time>} = ( $log_length, time )
+          if $log_length != $log_prev;
     }
     sleep $SCAN_PERIOD;
 }
