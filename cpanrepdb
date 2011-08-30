@@ -1,0 +1,131 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings FATAL => 'all';
+#use diagnostics;
+
+use Data::Dump;
+#use Carp qw();
+
+$|=1;
+################################################################################
+use CPAN::DistnameInfo;
+use DBI;
+use Try::Tiny;
+
+my $SQLITE_DB       = "/home/bri/cpanrep.db";
+my @REPORTS_SENT_DB = (
+    q(< /home/test/.cpanreporter/reports-sent.db),
+    q(ssh test@172.16.1.11 cat .cpanreporter/reports-sent.db |),
+    q(ssh bri@172.16.1.8 cat .cpanreporter/reports-sent.db |),
+);
+
+if (0) { # XXX DEBUG
+    unlink $SQLITE_DB;
+
+    @REPORTS_SENT_DB = (
+        q(< tmp/all),
+    );
+}
+
+run(); exit;
+
+sub run {
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$SQLITE_DB", "", "",
+        { RaiseError => 1, AutoCommit => 0, PrintError => 0 });
+    init_db($dbh);
+
+    update_db($dbh, $_)
+      for @REPORTS_SENT_DB;
+
+    $dbh->disconnect;
+}
+
+sub init_db {
+    my $dbh = shift;
+
+    # test PASS Try-Tiny-0.09 (perl-5.15.0) x86_64-linux-thread-multi-ld 2.6.35-28-generic
+    my $sql = <<'END_OF_SQL';
+        CREATE TABLE IF NOT EXISTS results (
+            id           INTEGER PRIMARY KEY,
+            --- START
+            phase        TEXT,
+            result       TEXT,
+            dist         TEXT,
+            dist_version TEXT,
+            perl_version TEXT,
+            perl_conf    TEXT,
+            os_version   TEXT,
+            --- END
+            timestamp    TEXT DEFAULT (strftime('%Y-%m-%d %H:%M', 'now'))
+        );
+END_OF_SQL
+
+    my @cols = do {
+        my ($names) = $sql =~ m<--- START\n(.*)\n\s+--- END>ms;
+        map {
+            die "can't identify sql columns" unless m/(\w+)/;
+            $1;
+        } split /\n/, $names;
+    };
+
+    $sql .= sprintf "CREATE UNIQUE INDEX IF NOT EXISTS results_ix ON results (%s)",
+      join ",", @cols;
+
+    $dbh->do($_) or die "$DBI::errstr for $_"
+      for split /;/, $sql;
+}
+
+sub update_db {
+    my ($dbh, $open_spec) = @_;
+
+    open my $IN, $open_spec or return; # XXX die qq<can't "open $open_spec": $!>;
+
+    while (my $line = <$IN>) {
+       chomp $line;
+        next if $line =~ /^\s*#/;
+
+        #   test    PASS     Try-Tiny-0.09  (perl-5.15.0)  x86_64-linux-thread-multi-ld 2.6.35-28-generic
+        my ($phase, $result, $distvname,    $perl_version, $perl_conf,                  $os_version) =
+          split ' ', $line;
+        ($perl_version) = $perl_version =~ /perl-(5.*)\)/;
+
+        my $d = CPAN::DistnameInfo->new("authors/id/B/BR/BRI/$distvname.tar.gz");
+        my ($dist, $dist_version) = ($d->dist, $d->version // '');
+
+        my $sql = "INSERT INTO results (
+                       phase, result, dist, dist_version,
+                       perl_version, perl_conf, os_version
+                   )
+                   VALUES(?,?,?,?,?,?,?)";
+
+        my $sth = $dbh->prepare($sql);
+        try {
+            $sth->execute(
+                $phase, $result, $dist, $dist_version,
+                $perl_version, $perl_conf, $os_version
+            );
+say $line;
+        }
+        catch {
+            /are not unique/ or die "$DBI::errstr:\n  ($line)";
+        };
+    }
+    $dbh->commit;
+
+    if (0) {
+        my $sth = $dbh->prepare(<<'EOS');
+SELECT strftime('%Y-%m-%d %H', timestamp) AS hour, count(*)
+FROM results
+GROUP BY hour
+ORDER BY hour
+EOS
+        $sth->execute() or die $DBI::errstr;
+
+        while (my $row = $sth->fetchrow_arrayref) {
+            say join " => ", @$row;
+        }
+    }
+}
