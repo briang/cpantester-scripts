@@ -1,0 +1,164 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings FATAL => 'all';
+#use diagnostics;
+
+use Data::Dump;
+#use Carp qw();
+
+$|=1;
+################################################################################
+use CPAN::DistnameInfo;
+use DBI;
+use Text::Table;
+use Time::HiRes 'time';
+use Try::Tiny;
+
+my $SQLITE_DB = "/home/bri/cpanrep.db";
+
+my $t = time;
+run();
+printf "Query complete in %0.3f seconds\n", time-$t;
+
+exit;
+
+sub run {
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$SQLITE_DB", "", "",
+        { RaiseError => 1, AutoCommit => 0, PrintError => 0 });
+
+# XXX query($dbh);
+
+    my $two_days_ago  = fetch($dbh, "SELECT datetime('now', '-2 day'  )");
+    my $one_month_ago = fetch($dbh, "SELECT datetime('now', '-1 month')");
+    my $one_year_ago  = fetch($dbh, "SELECT datetime('now', '-1 year' )");
+
+    my $sql_last_tested = <<EOS;
+SELECT timestamp AS t, perl_version AS v, perl_conf AS c
+FROM results
+-- WHERE t > ''
+GROUP BY c, v
+ORDER BY t
+EOS
+    my $sql_by_hour = <<EOS;
+SELECT strftime('%Y-%m-%d %H', timestamp) AS t, count(*)
+FROM results
+WHERE t > '$two_days_ago' AND result <> 'DISCARD'
+GROUP BY t
+ORDER BY t DESC
+EOS
+    my $sql_by_day = <<EOS;
+SELECT strftime('%Y-%m-%d', timestamp) AS t, count(*)
+FROM results
+WHERE t > '$one_month_ago' AND result <> 'DISCARD'
+GROUP BY t
+ORDER BY t DESC
+EOS
+    my $sql_by_month = <<EOS;
+SELECT strftime('%Y-%m', timestamp) AS t, count(*)
+FROM results
+WHERE t > '$one_year_ago' AND result <> 'DISCARD'
+GROUP BY t
+ORDER BY t DESC
+EOS
+    my $sql_recent = <<EOS;
+SELECT *
+FROM results
+-- WHERE perl_conf like '%freebsd%'
+-- WHERE perl_conf like '%linux%'
+ORDER BY timestamp DESC, dist, perl_version, perl_conf
+LIMIT 40
+EOS
+    my $sql_configs = <<EOS;
+SELECT DISTINCT perl_version AS v, perl_conf AS c
+FROM results
+ORDER BY v, c
+EOS
+    my $sql_recent_linux = <<EOS;
+SELECT *
+FROM results
+WHERE perl_conf like '%linux%'
+GROUP BY perl_version, perl_conf
+ORDER BY timestamp DESC, dist, perl_version, perl_conf
+EOS
+    my $sql_recent_freebsd = <<EOS;
+SELECT * -- perl_version as v, perl_conf as c
+FROM results
+WHERE perl_conf like '%freebsd%'
+-- GROUP BY perl_version, perl_conf
+ORDER BY timestamp DESC, dist, perl_version, perl_conf
+LIMIT 40
+EOS
+    my $sql_tests_done = <<EOS;
+SELECT * FROM (
+    SELECT max(timestamp) AS t,
+        perl_version AS v, perl_conf AS c, dist, dist_version
+    FROM results
+    GROUP BY v, c
+    ORDER BY timestamp DESC
+)
+ORDER BY c, v DESC, t DESC
+EOS
+
+    my $sql = (
+        $sql_tests_done,
+        $sql_by_hour,
+        $sql_by_day,
+        $sql_by_month,
+    )[1];
+
+    my $sth = $dbh->prepare($sql);
+    $sth->execute;
+
+    my $table = Text::Table->new;
+    while (my $row = $sth->fetchrow_arrayref) {
+        $table->add(@$row);
+    }
+    print $table;
+
+    $dbh->disconnect;
+}
+
+sub fetch {
+    my $dbh = shift;
+    my $sql = shift;
+
+    my $sth_t = $dbh->prepare($sql);
+    $sth_t->execute(@_);
+    return $sth_t->fetchrow_array;
+}
+
+sub query {
+    my $dbh = shift;
+
+    my %sql = (
+        sql => {
+            confs    => "SELECT DISTINCT perl_conf    FROM results",
+            versions => "SELECT DISTINCT perl_version FROM results",
+        },
+    );
+
+    for my $k (keys %{$sql{sql}}) {
+        my $sql = $sql{sql}{$k};
+        my $sth = $dbh->prepare($sql);
+
+        $sth->execute;
+        my $rows = $sth->fetchall_arrayref;
+
+        my @rows = map @$_, @$rows;
+
+        $sql{res}{$k} = \@rows;
+    }
+
+    $sql{res}{versions} = [
+        sort {
+            s/^5\.// for $a, $b;
+            $b <=> $a
+        } @{ $sql{res}{versions} }
+    ];
+
+    dd \%sql;
+die;
+}
