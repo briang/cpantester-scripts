@@ -1,0 +1,23 @@
+#!/bin/bash
+
+MAX=30k
+MAX=${MAX//k/000}
+FILES="/home/test/.cpan/smoker.log"
+
+nice perl -MCPAN::Reporter::Smoker -e 'start(restart_delay => 24*3600,install => 1)' \
+    < /dev/null &> ~/.cpan/smoker.log &
+pid=$!
+
+echo "Smoker ($pid) started (will die when log exceeds $MAX)"
+
+while true ; do
+    for file in $FILES ; do
+        size=$(stat -c%s "$file")
+        if [[ $size -gt $MAX ]] ; then
+            echo "$file $size > $MAX => killing smoker"
+            kill -2 -$pid
+            exit
+        fi
+    done
+    sleep 10
+done
