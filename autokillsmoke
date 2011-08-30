@@ -1,0 +1,47 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings FATAL => 'all';
+#use diagnostics;
+
+use Data::Dump;
+#use Carp qw();
+
+$|=1;
+################################################################################
+use autodie;
+use Time::HiRes 'sleep';
+
+my $SMOKE_LOG_DIR = '/tmp';
+my $smoke_log     = wait_for_new_log();
+
+sub wait_for_new_log {
+    my $log   = get_smoke_log($SMOKE_LOG_DIR);
+    my $mtime = mtime($log);
+
+    sleep 1
+      until -e $log && mtime($log) != $mtime;
+
+    return $log;
+}
+
+sub get_smoke_log {
+    my $dir = shift;
+
+    my $newest = '';
+    until ($newest) {
+        for (glob "$dir/smoker-status-*.txt") {
+            if ($newest) {
+                $newest = $_
+                  if mtime($_) > mtime($newest);
+            }
+            else { $newest = $_ }
+        }
+        sleep 0.2 unless $newest;
+    }
+    return $newest;
+}
+
+sub mtime { (stat shift)[9] }
