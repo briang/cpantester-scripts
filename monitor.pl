@@ -56,7 +56,8 @@ while (1) {
 }
 
 sub alert {
-    say @_, "\a";
+    my $time = sprintf "%02:%02 ", (localtime)[2,1];
+    say $time @_, "\a";
     sleep 1;
 }
 
