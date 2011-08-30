@@ -17,7 +17,7 @@ use Text::Table;
 use Time::HiRes 'time';
 use Try::Tiny;
 
-my $SQLITE_DB = "/home/bri/cpanrep.db";
+my $SQLITE_DB = "/home/bri/git/cpantester-scripts/.cpanrep.db";
 
 my $t = time;
 run();
