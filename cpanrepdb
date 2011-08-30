@@ -15,7 +15,7 @@ use CPAN::DistnameInfo;
 use DBI;
 use Try::Tiny;
 
-my $SQLITE_DB       = "/home/bri/cpanrep.db";
+my $SQLITE_DB       = "/home/bri/git/cpantester-scripts/.cpanrep.db";
 my @REPORTS_SENT_DB = (
     q(< /home/test/.cpanreporter/reports-sent.db),
     q(ssh test@172.16.1.11 cat .cpanreporter/reports-sent.db |),
