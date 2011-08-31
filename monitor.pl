@@ -25,6 +25,13 @@ my %smokers = (
     zippy  => 'test@localhost',
 );
 
+for (@ARGV) {
+    die "unknown argument ($_)\n" unless s/^-//;
+    die "unknown machine ($_)\n" unless exists $smokers{$_};
+
+    delete $smokers{$_};
+}
+
 say "Monitoring ", join ", ", sort keys %smokers;
 
 my %data;
