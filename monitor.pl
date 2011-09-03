@@ -84,7 +84,7 @@ sub filesize {
 
     my ($stdout, $stderr) = capture { system @cmd };
 
-    die "unknown error: $stderr"
+    alert("unknown error: $stderr")
       if $stderr; # XXX TODO cater for boxen being down
 
     #dd $smoker, $file, $stdout+0;
