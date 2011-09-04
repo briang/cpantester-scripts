@@ -20,8 +20,8 @@ my $SCAN_PERIOD  = 30;          # scan every n seconds
 my $DB_PERIOD    = 12 * 60;     # warn if DB hasn't grown in last n seconds
 
 my %smokers = (
-    fbsd   => 'test@172.16.1.11',
-    laptop => 'bri@172.16.1.8',
+    fbsd   => 'test@fbsd',
+    laptop => 'bri@lappy',
     zippy  => 'test@localhost',
 );
 

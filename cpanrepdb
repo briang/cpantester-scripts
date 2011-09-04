@@ -18,8 +18,8 @@ use Try::Tiny;
 my $SQLITE_DB       = "/home/bri/git/cpantester-scripts/.cpanrep.db";
 my @REPORTS_SENT_DB = (
     q(< /home/test/.cpanreporter/reports-sent.db),
-    q(ssh test@172.16.1.11 cat .cpanreporter/reports-sent.db |),
-    q(ssh bri@172.16.1.8 cat .cpanreporter/reports-sent.db |),
+    q(ssh test@fbsd cat .cpanreporter/reports-sent.db |),
+    q(ssh bri@lappy cat .cpanreporter/reports-sent.db |),
 );
 
 if (0) { # XXX DEBUG
