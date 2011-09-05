@@ -19,6 +19,8 @@ my $MAX_LOG_SIZE = 100_000_000;
 my $SCAN_PERIOD  = 30;          # scan every n seconds
 my $DB_PERIOD    = 12 * 60;     # warn if DB hasn't grown in last n seconds
 
+my $CLEAR_SCREEN = `clear`;
+
 my %smokers = (
     fbsd   => 'test@fbsd',
     laptop => 'bri@lappy',
@@ -32,7 +34,7 @@ for (@ARGV) {
     delete $smokers{$_};
 }
 
-say "Monitoring ", join ", ", sort keys %smokers;
+header();
 
 my %data;
 while (1) {
@@ -59,7 +61,7 @@ while (1) {
             next;
         }
 
-        @{$data{$smoker}}{qw<db db_time>} = ( $db_length, time )
+        @{$data{$smoker}}{qw<db  db_time>}  = ( $db_length,  time )
           if $db_length != $db_prev;
 
         @{$data{$smoker}}{qw<log log_time>} = ( $log_length, time )
@@ -92,4 +94,8 @@ sub filesize {
     $stdout ||= 0; # tester is up, but not smoking
 
     return 0 + $stdout;
+}
+
+sub header {
+    say $CLEAR_SCREEN, "Monitoring ", join ", ", sort keys %smokers;
 }
