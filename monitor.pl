@@ -51,7 +51,7 @@ while (1) {
             && time - $data{$smoker}{db_time}  >= $DB_PERIOD;
 
         $alert = "log"
-          if   $log_length == $log_prev
+          if   $log_length == $log_prev && $log_length
             && time - $data{$smoker}{log_time} >= $LOG_PERIOD;
 
         if ($alert) {
