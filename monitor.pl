@@ -47,6 +47,9 @@ while (1) {
         alert("$smoker\'s log is too big")
           if $log_length > $MAX_LOG_SIZE;
 
+        header()
+          if $log_length < $log_prev;
+
         my $alert;
         $alert = "DB"
           if   $db_length == $db_prev
