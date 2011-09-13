@@ -12,6 +12,7 @@ contents
 * cpanrepq - query my testers database
 * deploy-prefs.pl - copy distroprefs to testers
 * monitor.pl - watch for stalled smokers
+* progress-all.pl - report current smokee for each smoker
 * smoke-progress - shows which dists have been tested
 * smoker - wrapper to control the smoker [experimental]
 * top20 - show top 20 testers since previous run
