@@ -25,10 +25,15 @@ my %SMOKERS = (
 my %find_ls = read_find_ls($FIND_LS);
 
 for my $smoker (sort keys %SMOKERS) {
-    my $current  = get_dist_under_test($smoker);
-    my $ts       = $find_ls{$current};
-
-    printf "%-6s %s %s\n", $smoker, $ts, $current;
+    my $current = get_dist_under_test($smoker);
+    if (ref $current eq '') {
+        my $ts      = $find_ls{$current};
+        printf "%-6s %s %s\n", $smoker, $ts, $current;
+    }
+    else {
+        $$current =~ s/\r\n$//;
+        say "[$$current]";
+    }
 }
 
 sub read_find_ls {
@@ -55,7 +60,7 @@ sub get_dist_under_test {
     );
 
     my ($stdout, $stderr) = capture { system @cmd };
-    die $stderr if $stderr;
+    return \$stderr if $stderr;
 
     return (split ' ', $stdout)[0];
 }
