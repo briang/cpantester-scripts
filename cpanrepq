@@ -99,7 +99,8 @@ SELECT * FROM (
     GROUP BY v, c
     ORDER BY timestamp DESC
 )
-ORDER BY c, v DESC, t DESC
+-- ORDER BY c, v DESC, t DESC
+ORDER BY substr(c, 1, 1), v DESC, c
 EOS
 
     my $sql = (
