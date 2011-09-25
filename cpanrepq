@@ -102,12 +102,18 @@ SELECT * FROM (
 -- ORDER BY c, v DESC, t DESC
 ORDER BY substr(c, 1, 1), v DESC, c
 EOS
+    my $sql_all_tests = <<EOS;
+SELECT count(*)
+FROM results
+WHERE result <> 'DISCARD'
+EOS
 
     my $sql = (
         $sql_tests_done,
         $sql_by_hour,
         $sql_by_day,
         $sql_by_month,
+        $sql_all_tests,
     )[1];
 
     my $sth = $dbh->prepare($sql);
