@@ -11,6 +11,7 @@ contents
 * cpanrepdb - update database from various reports-sent.db's
 * cpanrepq - query my testers database
 * deploy-prefs.pl - copy distroprefs to testers
+* find-my-modules.pl - list modules I use
 * monitor.pl - watch for stalled smokers
 * progress-all.pl - report current smokee for each smoker
 * smoke-progress - shows which dists have been tested
