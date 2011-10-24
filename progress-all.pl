@@ -14,6 +14,7 @@ $|=1;
 #use Try::Tiny;
 use autodie;
 use Capture::Tiny qw<capture>;
+use Text::Table;
 
 my $FIND_LS = '/mirrors/cpan/indices/find-ls.gz';
 my %SMOKERS = (
@@ -24,17 +25,21 @@ my %SMOKERS = (
 
 my %find_ls = read_find_ls($FIND_LS);
 
+my $tab = Text::Table->new;
 for my $smoker (sort keys %SMOKERS) {
     my $current = get_dist_under_test($smoker);
     if (ref $current eq '') {
         my $ts      = $find_ls{$current};
-        printf "%-6s %s %s\n", $smoker, $ts, $current;
+        $tab->add($smoker, $ts, $current);
     }
-    else {
+    else { # error
         $$current =~ s/\r\n$//;
-        say "[$$current]";
+        $tab->add("[$$current]");
     }
 }
+
+print $tab;
+exit;
 
 sub read_find_ls {
     my $fls = shift;
