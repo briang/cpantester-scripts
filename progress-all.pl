@@ -34,7 +34,7 @@ for my $smoker (sort keys %SMOKERS) {
     }
     else { # error
         $$current =~ s/\r\n$//;
-        $tab->add("[$$current]");
+        $tab->add($smoker, '', "[$$current]");
     }
 }
 
