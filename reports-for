@@ -1,0 +1,65 @@
+#!/usr/local/bin/perl
+
+use 5.010;
+
+use strict;
+use warnings FATAL => 'all';
+#use diagnostics;
+
+use Data::Dump;
+#use Carp qw();
+
+$|=1;
+################################################################################
+use CPAN::DistnameInfo;
+use DBI;
+use Text::Table;
+use Time::HiRes 'time';
+use Try::Tiny;
+
+my $SQLITE_DB = "/home/bri/git/cpantester-scripts/.cpanrep.db";
+
+my $t = time;
+run(@ARGV);
+printf "Query complete in %0.3f seconds\n", time-$t;
+
+exit;
+
+sub run {
+    die "usage: $0 distro [version]\n" if @_ != 1 && @_ != 2;
+    my ($dist, $ver) = @_;
+    $dist =~ s/::/-/g;
+
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$SQLITE_DB", "", "",
+        { RaiseError => 1, AutoCommit => 0, PrintError => 0 });
+
+# id phase result dist  dist_version perl_version perl-config os_version        timestamp
+# 12 test  PASS   Error v0.1.4       5.15.5       i686-linux  2.6.38-11-generic 2011-11-24 00:55
+
+    my $sql = <<EOS;
+SELECT phase,result,dist,dist_version,perl_version,perl_conf,os_version,timestamp
+FROM results
+WHERE dist = ? AND dist_version = ?
+ORDER BY dist_version,perl_version,perl_conf
+EOS
+
+    my $sth;
+    if ($ver) {
+        $sth = $dbh->prepare($sql);
+        $sth->execute($dist, $ver);
+    }
+    else {
+        $sql =~ s/\?.*/?/;
+        $sth = $dbh->prepare($sql);
+        $sth->execute($dist);
+    }
+
+    my $table = Text::Table->new;
+    while (my $row = $sth->fetchrow_arrayref) {
+        $table->add(@$row);
+    }
+
+    print $table;
+
+    $dbh->disconnect;
+}

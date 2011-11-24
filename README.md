@@ -14,6 +14,7 @@ contents
 * find-my-modules.pl - list modules I use
 * monitor.pl - watch for stalled smokers
 * progress-all.pl - report current smokee for each smoker
+* reports-for - show reports for a dist [version]
 * smoke-progress - shows which dists have been tested
 * smoker - wrapper to control the smoker [experimental]
 * top20 - show top 20 testers since previous run
