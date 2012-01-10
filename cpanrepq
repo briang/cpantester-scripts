@@ -109,11 +109,11 @@ WHERE result <> 'DISCARD'
 EOS
 
     my $sql = (
-        $sql_tests_done,
-        $sql_by_hour,
-        $sql_by_day,
-        $sql_by_month,
-        $sql_all_tests,
+        $sql_tests_done, # 0
+        $sql_by_hour,    # 1
+        $sql_by_day,     # 2
+        $sql_by_month,   # 3
+        $sql_all_tests,  # 4
     )[1];
 
     my $sth = $dbh->prepare($sql);
