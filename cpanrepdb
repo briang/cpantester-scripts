@@ -15,6 +15,11 @@ use CPAN::DistnameInfo;
 use DBI;
 use Try::Tiny;
 
+# only check the last MOST_RECENT lines in reports_sent.db (prior to
+# this change, there was up to 16k db inserts every 5 minutes per
+# smoker)
+use constant MOST_RECENT => 1000;
+
 my $SQLITE_DB       = "/home/bri/git/cpantester-scripts/.cpanrep.db";
 my @REPORTS_SENT_DB = (
     q(< /home/test/.cpanreporter/reports-sent.db),
@@ -83,10 +88,13 @@ sub update_db {
 
     open my $IN, $open_spec or return; # XXX die qq<can't "open $open_spec": $!>;
 
-    while (my $line = <$IN>) {
-       chomp $line;
-        next if $line =~ /^\s*#/;
+    my @lines = map {
+        chomp;
+        /^\s*#/  ?  ()  :  $_;
+    } <$IN>;
+    splice @lines, 0, -MOST_RECENT();
 
+    for my $line (@lines) {
         #   test    PASS     Try-Tiny-0.09  (perl-5.15.0)  x86_64-linux-thread-multi-ld 2.6.35-28-generic
         my ($phase, $result, $distvname,    $perl_version, $perl_conf,                  $os_version) =
           split ' ', $line;
